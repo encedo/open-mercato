@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardDescription } from '@open-mercato/ui/primitives/card'
 import { Input } from '@open-mercato/ui/primitives/input'
+import { EmailInput } from '@open-mercato/ui/primitives/email-input'
+import { PasswordInput } from '@open-mercato/ui/primitives/password-input'
 import { Label } from '@open-mercato/ui/primitives/label'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
@@ -13,7 +15,7 @@ import { translateWithFallback } from '@open-mercato/shared/lib/i18n/translate'
 import { clearAllOperations } from '@open-mercato/ui/backend/operations/store'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { X } from 'lucide-react'
-import { Notice } from '@open-mercato/ui/primitives/Notice'
+import { Alert, AlertDescription } from '@open-mercato/ui/primitives/alert'
 import { InjectionSpot } from '@open-mercato/ui/backend/injection/InjectionSpot'
 import { useRegisteredComponent } from '@open-mercato/ui/backend/injection/useRegisteredComponent'
 import type { AuthOverride, LoginFormWidgetContext } from './login-injection'
@@ -301,22 +303,26 @@ export default function LoginPage() {
                 <input type="hidden" name="tenantId" value={tenantId} />
               ) : null}
               {!!translatedRoles.length && (
-                <Notice compact className="text-center">
-                  {translate(
-                    translatedRoles.length > 1 ? 'auth.login.requireRolesMessage' : 'auth.login.requireRoleMessage',
-                    translatedRoles.length > 1
-                      ? 'Access requires one of the following roles: {roles}'
-                      : 'Access requires role: {roles}',
-                    { roles: translatedRoles.join(', ') },
-                  )}
-                </Notice>
+                <Alert variant="info" className="text-center">
+                  <AlertDescription>
+                    {translate(
+                      translatedRoles.length > 1 ? 'auth.login.requireRolesMessage' : 'auth.login.requireRoleMessage',
+                      translatedRoles.length > 1
+                        ? 'Access requires one of the following roles: {roles}'
+                        : 'Access requires role: {roles}',
+                      { roles: translatedRoles.join(', ') },
+                    )}
+                  </AlertDescription>
+                </Alert>
               )}
               {!!translatedFeatures.length && (
-                <Notice compact className="text-center">
-                  {translate('auth.login.featureDenied', "You don't have access to this feature ({feature}). Please contact your administrator.", {
-                    feature: translatedFeatures.join(', '),
-                  })}
-                </Notice>
+                <Alert variant="info" className="text-center">
+                  <AlertDescription>
+                    {translate('auth.login.featureDenied', "You don't have access to this feature ({feature}). Please contact your administrator.", {
+                      feature: translatedFeatures.join(', '),
+                    })}
+                  </AlertDescription>
+                </Alert>
               )}
               {showTenantInvalid ? (
                 <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-center text-xs text-red-700">
@@ -348,10 +354,9 @@ export default function LoginPage() {
               )}
               <div className="grid gap-1">
                 <Label htmlFor="email">{t('auth.email')}</Label>
-                <Input
+                <EmailInput
                   id="email"
                   name="email"
-                  type="email"
                   required
                   aria-invalid={!!error}
                   onChange={(e) => setEmail(e.target.value)}
@@ -365,7 +370,7 @@ export default function LoginPage() {
               {authOverride?.hidePassword ? null : (
                 <div className="grid gap-1">
                   <Label htmlFor="password">{t('auth.password')}</Label>
-                  <Input id="password" name="password" type="password" required={!authOverride} aria-invalid={!!error} />
+                  <PasswordInput id="password" name="password" required={!authOverride} aria-invalid={!!error} autoComplete="current-password" />
                 </div>
               )}
               {!authOverride?.hideRememberMe && !authOverride?.hidePassword && (

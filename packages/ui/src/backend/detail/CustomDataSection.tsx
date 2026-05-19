@@ -32,7 +32,9 @@ import { ComponentReplacementHandles } from '@open-mercato/shared/modules/widget
 import { MarkdownPreview } from '../markdown'
 import { useRegisteredComponent } from '../injection/useRegisteredComponent'
 
-const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+const isTestEnv =
+  typeof process !== 'undefined' &&
+  (process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined')
 
 let markdownPluginsPromise: Promise<PluggableList> | null = null
 
@@ -71,6 +73,20 @@ function extractDictionaryValue(entry: unknown): string | null {
     return trimmed.length ? trimmed : null
   }
   return null
+}
+
+function readCustomDataFieldValue(values: Record<string, unknown> | undefined, fieldId: string): unknown {
+  if (!values || !fieldId) return undefined
+  const candidates = fieldId.startsWith('cf_')
+    ? [fieldId, `cf:${fieldId.slice(3)}`, fieldId.slice(3)]
+    : [fieldId, `cf_${fieldId}`, `cf:${fieldId}`]
+
+  for (const candidate of candidates) {
+    if (Object.prototype.hasOwnProperty.call(values, candidate)) {
+      return values[candidate]
+    }
+  }
+  return undefined
 }
 
 export type CustomDataLabels = {
@@ -310,6 +326,15 @@ function CustomDataSectionImpl({
     () => customFieldFormsQuery.data?.definitions ?? [],
     [customFieldFormsQuery.data],
   )
+  const formInitialValues = React.useMemo(() => {
+    const next: Record<string, unknown> = { ...(values ?? {}) }
+    fields.forEach((field) => {
+      if (!field.id || Object.prototype.hasOwnProperty.call(next, field.id)) return
+      const resolved = readCustomDataFieldValue(values, field.id)
+      if (resolved !== undefined) next[field.id] = resolved
+    })
+    return next
+  }, [fields, values])
   const [dictionaryLoading, setDictionaryLoading] = React.useState(false)
   const [relationLoading, setRelationLoading] = React.useState(false)
   const loading = customFieldFormsQuery.isLoading || dictionaryLoading || relationLoading
@@ -471,7 +496,7 @@ function CustomDataSectionImpl({
         const normalizedKey = field.id.startsWith('cf_') ? field.id.slice(3) : field.id
         const definition = definitionsByKey.get(normalizedKey.toLowerCase())
         if (!definition || definition.kind !== 'relation') return null
-        const relationIds = collectRelationValueIds(values?.[field.id])
+        const relationIds = collectRelationValueIds(readCustomDataFieldValue(values, field.id))
         if (!relationIds.length) return null
         return { field, definition, relationIds }
       })
@@ -619,7 +644,7 @@ function CustomDataSectionImpl({
               entityId={primaryEntityId}
               entityIds={resolvedEntityIds}
               fields={fields}
-              initialValues={values}
+              initialValues={formInitialValues}
               onSubmit={handleSubmit}
               submitLabel={labels.saveShortcut}
               isLoading={loading}
@@ -628,7 +653,7 @@ function CustomDataSectionImpl({
         ) : (
           <div
             className={cn(
-              'rounded-lg border bg-muted/20 p-3 sm:p-4 space-y-2 sm:space-y-3 transition hover:border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+              'rounded-lg border bg-muted/30 p-3 sm:p-4 space-y-2 sm:space-y-3 transition hover:border-border/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               hasFields && !loading ? 'cursor-pointer' : 'cursor-default',
             )}
             role={hasFields && !loading ? 'button' : undefined}
@@ -657,7 +682,7 @@ function CustomDataSectionImpl({
                   <div className="text-sm break-words">
                     {formatFieldValue(
                       field,
-                      values?.[field.id],
+                      readCustomDataFieldValue(values, field.id),
                       labels.emptyValue,
                       dictionaryMapsByField[field.id],
                       markdownPlugins,
