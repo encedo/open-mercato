@@ -80,6 +80,11 @@ export type CacheStrategy = {
   }>
 
   /**
+   * Verify the configured backend is reachable without activating a fallback.
+   */
+  healthcheck?(): Promise<void>
+
+  /**
    * Clean up expired entries (optional, some strategies may auto-cleanup)
    * @returns Number of entries removed
    */
@@ -97,4 +102,12 @@ export type CacheServiceOptions = {
   sqlitePath?: string
   jsonFilePath?: string
   defaultTtl?: number
+  /**
+   * Upper bound on retained entries for the in-memory strategy (including the
+   * memory fallback used when a native dependency is unavailable). Bounds
+   * memory for process-wide instances via LRU eviction. Falls back to
+   * `CACHE_MEMORY_MAX_ENTRIES` then a built-in default; a non-positive value
+   * disables the cap.
+   */
+  maxEntries?: number
 }

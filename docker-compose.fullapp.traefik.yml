@@ -2,21 +2,28 @@
 #
 # Use this overlay when you want the bundled Traefik to terminate TLS,
 # auto-issue Let's Encrypt certificates, and run the custom-domain
-# ForwardAuth gate (Phase 3 of `.ai/specs/2026-04-08-portal-custom-domain-routing.md`).
+# ForwardAuth gate (Phase 3 of `.ai/specs/implemented/2026-04-08-portal-custom-domain-routing.md`).
 #
 # Skip this overlay when an external reverse proxy already terminates TLS
 # (Dokploy, Caddy, nginx, Cloudflare Tunnel, etc.) — point that proxy at
 # the app container's port and replicate the two routers + ForwardAuth
 # middleware in its own config. See docker/traefik/README.md.
 #
+# This overlay defaults `TRAEFIK_CA_SERVER` to the LE **production** directory
+# so the prod invocation issues real certificates. Dev workflows layer the
+# dev-only `docker-compose.fullapp.traefik.dev.yml` overlay on top to flip the
+# default to LE staging (untrusted certs, much higher rate limits) for safe
+# iteration.
+#
 # Usage:
 #   # Production:
 #   docker compose -f docker-compose.fullapp.yml \
 #     -f docker-compose.fullapp.traefik.yml up -d
 #
-#   # Dev (LE staging is the default in dev — override TRAEFIK_CA_SERVER for prod):
+#   # Dev (staging ACME via the dev overlay; drop the third file to use prod):
 #   docker compose -f docker-compose.fullapp.dev.yml \
-#     -f docker-compose.fullapp.traefik.yml up --build
+#     -f docker-compose.fullapp.traefik.yml \
+#     -f docker-compose.fullapp.traefik.dev.yml up --build
 
 services:
   traefik:
