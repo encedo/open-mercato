@@ -94,10 +94,11 @@ const drawerContentVariants = cva(
     variants: {
       side: {
         right:
-          'inset-y-0 right-0 h-full w-full max-w-md rounded-l-xl ' +
+          // Figma Drawer [1.1] width: 400px (not the Tailwind max-w-md 448px)
+          'inset-y-0 right-0 h-full w-full max-w-[400px] rounded-l-xl ' +
           'data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right',
         left:
-          'inset-y-0 left-0 h-full w-full max-w-md rounded-r-xl ' +
+          'inset-y-0 left-0 h-full w-full max-w-[400px] rounded-r-xl ' +
           'data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left',
         top:
           'inset-x-0 top-0 max-h-[80vh] w-full rounded-b-xl ' +
@@ -166,6 +167,8 @@ const DrawerContent = React.forwardRef<
 DrawerContent.displayName = 'DrawerContent'
 
 export type DrawerHeaderProps = React.HTMLAttributes<HTMLDivElement> & {
+  /** Small Figma headers use a bare 24px leading icon. */
+  compact?: boolean
   /**
    * Optional leading icon — rendered inside a size-10 bordered circle
    * badge to the left of the title block. Matches Figma `Drawer Header
@@ -176,7 +179,7 @@ export type DrawerHeaderProps = React.HTMLAttributes<HTMLDivElement> & {
 }
 
 const DrawerHeader = React.forwardRef<HTMLDivElement, DrawerHeaderProps>(
-  ({ className, leading, children, ...props }, ref) => (
+  ({ className, leading, compact = false, children, ...props }, ref) => (
     <div
       ref={ref}
       data-slot="drawer-header"
@@ -192,7 +195,7 @@ const DrawerHeader = React.forwardRef<HTMLDivElement, DrawerHeaderProps>(
         <span
           data-slot="drawer-header-leading"
           aria-hidden="true"
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-input bg-background text-muted-foreground"
+          className={cn('inline-flex shrink-0 items-center justify-center text-muted-foreground', compact ? 'size-6' : 'size-10 rounded-full border border-input bg-background')}
         >
           {leading}
         </span>
@@ -303,7 +306,7 @@ const DrawerTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     data-slot="drawer-title"
-    className={cn('text-base font-semibold leading-tight text-foreground', className)}
+    className={cn('text-lg font-semibold leading-tight text-foreground', className)}
     {...props}
   />
 ))
